@@ -4,51 +4,63 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func validateChirp(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json; charset=utf-8")
-	type req struct {
+	type parameters struct {
 		Body string `json:"body"`
+	}
+	type returnVals struct {
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	params := req{}
-
+	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		log.Printf("Error when decoding request body: %s\n", err)
-		w.WriteHeader(500)
+		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
 		return
 	}
 
-	if len(params.Body) > 140 {
-		type errorRes struct {
-			Error string `json:"error"`
-		}
-		errResponse := errorRes{Error: "Chirp is too long"}
-		data, err := json.Marshal(errResponse)
-		if err != nil {
-			log.Printf("Error when marshalling json response: %s\n", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.WriteHeader(400)
-		w.Write(data)
+	const maxChirpLength = 140
+	if len(params.Body) > maxChirpLength {
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
-	type success struct {
-		Valid bool `json:"valid"`
+	chirpSlice := strings.Fields(params.Body)
+	for i, word := range chirpSlice {
+		if strings.ToLower(word) == "kerfuffle" || strings.ToLower(word) == "sharbert" || strings.ToLower(word) == "fornax" {
+			chirpSlice[i] = "****"
+		}
 	}
-	res := success{Valid: true}
-	data, err := json.Marshal(res)
+
+	respondWithJSON(w, http.StatusOK, returnVals{
+		CleanedBody: strings.Join(chirpSlice, " "),
+	})
+}
+
+func respondWithError(w http.ResponseWriter, code int, msg string) {
+	if code > 499 {
+		log.Printf("Responding with 5XX error: %s", msg)
+	}
+	type errorResponse struct {
+		Error string `json:"error"`
+	}
+	respondWithJSON(w, code, errorResponse{
+		Error: msg,
+	})
+}
+
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	dat, err := json.Marshal(payload)
 	if err != nil {
-		log.Printf("Error when marshalling json response: %s\n", err)
+		log.Printf("Error marshalling JSON: %s", err)
 		w.WriteHeader(500)
 		return
 	}
-	w.WriteHeader(200)
-	w.Write(data)
-
+	w.WriteHeader(code)
+	w.Write(dat)
 }
