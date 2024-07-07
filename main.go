@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 type apiConfig struct {
@@ -15,9 +14,9 @@ func main() {
 	mux := http.NewServeMux()
 	appConfig := &apiConfig{fileserverHits: 0}
 	mux.Handle("/app/", appConfig.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(".")))))
-	mux.HandleFunc("/healthz", getHealthCheck)
-	mux.HandleFunc("/metrics", appConfig.getMetrics)
-	mux.HandleFunc("/reset", appConfig.resetMetrics)
+	mux.HandleFunc("GET /api/healthz", getHealthCheck)
+	mux.HandleFunc("GET /admin/metrics", appConfig.getMetrics)
+	mux.HandleFunc("GET /api/reset", appConfig.resetMetrics)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 
@@ -40,10 +39,16 @@ func (c *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (c *apiConfig) getMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	res := strconv.Itoa(c.fileserverHits)
-	w.Write([]byte("Hits: " + res))
+	w.Write([]byte(fmt.Sprintf(`<html>
+
+<body>
+    <h1>Welcome, Chirpy Admin</h1>
+    <p>Chirpy has been visited %d times!</p>
+</body>
+
+</html>`, c.fileserverHits)))
 }
 
 func (c *apiConfig) resetMetrics(w http.ResponseWriter, r *http.Request) {
