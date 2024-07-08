@@ -3,7 +3,13 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"sync"
 )
+
+type DB struct {
+	path string
+	mu   *sync.RWMutex
+}
 
 type File struct {
 	Chirps map[int]Chirp `json:"chirps"`
@@ -14,11 +20,13 @@ type Chirp struct {
 	Body string `json:"body"`
 }
 
-func readChirps() (File, error) {
+func (db *DB) readChirps() (File, error) {
+	db.mu.RLock()
 	data, err := os.ReadFile("database.json")
 	if err != nil {
 		return File{}, err
 	}
+	db.mu.RUnlock()
 
 	if len(data) == 0 {
 		file := File{Chirps: map[int]Chirp{}}
@@ -33,11 +41,13 @@ func readChirps() (File, error) {
 	return file, nil
 }
 
-func addChirp(chirp Chirp) error {
-	file, err := readChirps()
+func (db *DB) addChirp(chirp Chirp) error {
+	file, err := db.readChirps()
 
 	file.Chirps[chirp.ID] = chirp
 
+	db.mu.Lock()
+	defer db.mu.Unlock()
 	data, err := json.Marshal(file)
 	if err != nil {
 		return err
@@ -46,4 +56,14 @@ func addChirp(chirp Chirp) error {
 	os.WriteFile("database.json", data, 0666)
 
 	return nil
+}
+
+func createDB(path string) (*DB, error) {
+	_, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+
+	db := &DB{path: path, mu: &sync.RWMutex{}}
+	return db, nil
 }

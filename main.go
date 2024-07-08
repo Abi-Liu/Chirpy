@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 )
 
 type apiConfig struct {
 	fileserverHits int
 	UID            int
-	file           *os.File
+	db             *DB
 }
 
 func createUIDClosure() func() int {
@@ -25,19 +24,18 @@ func main() {
 	mux := http.NewServeMux()
 	appConfig := &apiConfig{}
 
-	// create in memory json file to store chirps
-	file, err := os.Create("database.json")
+	db, err := createDB("database.json")
 	if err != nil {
-		log.Println("Failed to create database.json\nShutting down...")
+		log.Printf("Failed to create database: %s", err.Error())
 	}
-	appConfig.file = file
+	appConfig.db = db
 
 	mux.Handle("/app/", appConfig.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /api/healthz", getHealthCheck)
 	mux.HandleFunc("GET /admin/metrics", appConfig.getMetrics)
 	mux.HandleFunc("GET /api/reset", appConfig.resetMetrics)
 	mux.HandleFunc("POST /api/chirps", appConfig.postChirp)
-	mux.HandleFunc("GET /api/chirps", getChirps)
+	mux.HandleFunc("GET /api/chirps", appConfig.getChirps)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 

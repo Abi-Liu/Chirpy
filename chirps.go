@@ -41,7 +41,7 @@ func (c *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 		ID:   c.UID,
 		Body: strings.Join(chirpSlice, " "),
 	}
-	err = addChirp(chirp)
+	err = c.db.addChirp(chirp)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -53,8 +53,8 @@ func (c *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func getChirps(w http.ResponseWriter, r *http.Request) {
-	file, err := readChirps()
+func (c *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
+	file, err := c.db.readChirps()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 	}
