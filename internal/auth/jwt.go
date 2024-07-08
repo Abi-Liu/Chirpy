@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"log"
 	"strconv"
 	"time"
@@ -9,10 +11,10 @@ import (
 )
 
 func GenerateToken(secret string, id, expiresAt int) (string, error) {
-	dayInSeconds := 24 * 60 * 60
+	hourInSeconds := 60 * 60
 	log.Print("expires start: ", expiresAt)
-	if expiresAt == 0 || expiresAt > dayInSeconds {
-		expiresAt = dayInSeconds
+	if expiresAt == 0 || expiresAt > hourInSeconds {
+		expiresAt = hourInSeconds
 	}
 
 	log.Print("expires final: ", expiresAt)
@@ -49,4 +51,16 @@ func ParseToken(tokenString, secret string) (string, error) {
 	}
 
 	return subject, nil
+}
+
+func GenerateRefreshToken() (string, error) {
+	bytes := make([]byte, 32)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+
+	token := hex.EncodeToString(bytes)
+	log.Print(token)
+	return token, nil
 }

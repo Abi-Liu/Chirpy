@@ -91,3 +91,24 @@ func (db *DB) UpdateCredentials(id int, email, password string) (User, error) {
 
 	return updatedUser, nil
 }
+
+func (db *DB) UpdateRefreshToken(id int, token string) error {
+	file, err := db.ReadFile()
+	if err != nil {
+		return err
+	}
+
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	file.Tokens[id] = token
+
+	data, err := json.Marshal(file)
+	if err != nil {
+		return err
+	}
+
+	os.WriteFile(db.path, data, 0666)
+
+	return nil
+}

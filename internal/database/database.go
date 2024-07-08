@@ -15,6 +15,7 @@ type DB struct {
 type File struct {
 	Chirps map[int]Chirp `json:"chirps"`
 	Users  map[string]User
+	Tokens map[int]string
 }
 
 type User struct {
@@ -50,6 +51,7 @@ func (db *DB) ReadFile() (File, error) {
 		file := File{
 			Chirps: map[int]Chirp{},
 			Users:  map[string]User{},
+			Tokens: map[int]string{},
 		}
 		return file, nil
 	}
