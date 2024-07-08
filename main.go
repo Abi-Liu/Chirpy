@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/abi-liu/chirpy/internal/database"
+	"github.com/joho/godotenv"
 )
 
 type apiConfig struct {
 	fileserverHits int
 	UID            int
 	db             *database.DB
+	jwt            string
 }
 
 func createUIDClosure() func() int {
@@ -23,8 +26,14 @@ func createUIDClosure() func() int {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Failed to load env")
+	}
+	jwtSecret := os.Getenv("JWT_SECRET")
 	mux := http.NewServeMux()
 	appConfig := &apiConfig{}
+	appConfig.jwt = jwtSecret
 
 	db, err := database.CreateDB("database.json")
 	if err != nil {
@@ -41,6 +50,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps/{id}", appConfig.getChirpById)
 	mux.HandleFunc("POST /api/users", appConfig.createUser)
 	mux.HandleFunc("POST /api/login", appConfig.login)
+	mux.HandleFunc("PUT /api/users", appConfig.updateUserCredentials)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 

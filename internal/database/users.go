@@ -54,3 +54,40 @@ func (db *DB) CreateUser(email string, password string) (User, error) {
 	os.WriteFile(db.path, data, 0666)
 	return user, nil
 }
+
+func (db *DB) UpdateCredentials(id int, email, password string) (User, error) {
+	file, err := db.ReadFile()
+	if err != nil {
+		return User{}, err
+	}
+
+	hashedPassword, err := HashPassword(password)
+	if err != nil {
+		return User{}, err
+	}
+
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	updatedUser := User{
+		ID:       id,
+		Email:    email,
+		Password: hashedPassword,
+	}
+
+	for k, v := range file.Users {
+		if v.ID == id {
+			delete(file.Users, k)
+			file.Users[email] = updatedUser
+		}
+	}
+
+	data, err := json.Marshal(file)
+	if err != nil {
+		return User{}, err
+	}
+
+	os.WriteFile(db.path, data, 0666)
+
+	return updatedUser, nil
+}
