@@ -36,6 +36,7 @@ func main() {
 	mux.HandleFunc("GET /api/reset", appConfig.resetMetrics)
 	mux.HandleFunc("POST /api/chirps", appConfig.postChirp)
 	mux.HandleFunc("GET /api/chirps", appConfig.getChirps)
+	mux.HandleFunc("GET /api/chirps/{id}", appConfig.getChirpById)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 
