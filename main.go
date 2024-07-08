@@ -4,20 +4,40 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 type apiConfig struct {
 	fileserverHits int
+	UID            int
+	file           *os.File
+}
+
+func createUIDClosure() func() int {
+	count := 0
+	return func() int {
+		count++
+		return count
+	}
 }
 
 func main() {
 	mux := http.NewServeMux()
-	appConfig := &apiConfig{fileserverHits: 0}
+	appConfig := &apiConfig{}
+
+	// create in memory json file to store chirps
+	file, err := os.Create("database.json")
+	if err != nil {
+		log.Println("Failed to create database.json\nShutting down...")
+	}
+	appConfig.file = file
+
 	mux.Handle("/app/", appConfig.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /api/healthz", getHealthCheck)
 	mux.HandleFunc("GET /admin/metrics", appConfig.getMetrics)
 	mux.HandleFunc("GET /api/reset", appConfig.resetMetrics)
-	mux.HandleFunc("POST /api/validate_chirp", validateChirp)
+	mux.HandleFunc("POST /api/chirps", appConfig.postChirp)
+	mux.HandleFunc("GET /api/chirps", getChirps)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 
