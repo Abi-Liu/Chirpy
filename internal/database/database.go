@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ type DB struct {
 
 type File struct {
 	Chirps map[int]Chirp `json:"chirps"`
-	Users  map[int]User
+	Users  map[string]User
 }
 
 type User struct {
@@ -28,7 +28,17 @@ type Chirp struct {
 	Body string `json:"body"`
 }
 
-func (db *DB) readFile() (File, error) {
+func CreateDB(path string) (*DB, error) {
+	_, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+
+	db := &DB{path: path, mu: &sync.RWMutex{}}
+	return db, nil
+}
+
+func (db *DB) ReadFile() (File, error) {
 	db.mu.RLock()
 	data, err := os.ReadFile("database.json")
 	if err != nil {
@@ -39,7 +49,7 @@ func (db *DB) readFile() (File, error) {
 	if len(data) == 0 {
 		file := File{
 			Chirps: map[int]Chirp{},
-			Users:  map[int]User{},
+			Users:  map[string]User{},
 		}
 		return file, nil
 	}
@@ -52,8 +62,8 @@ func (db *DB) readFile() (File, error) {
 	return file, nil
 }
 
-func (db *DB) addChirp(chirp Chirp) error {
-	file, err := db.readFile()
+func (db *DB) AddChirp(chirp Chirp) error {
+	file, err := db.ReadFile()
 
 	file.Chirps[chirp.ID] = chirp
 
@@ -69,8 +79,8 @@ func (db *DB) addChirp(chirp Chirp) error {
 	return nil
 }
 
-func (db *DB) getChirpById(id int) (Chirp, error) {
-	file, err := db.readFile()
+func (db *DB) GetChirpById(id int) (Chirp, error) {
+	file, err := db.ReadFile()
 	if err != nil {
 		return Chirp{}, err
 	}
@@ -81,39 +91,4 @@ func (db *DB) getChirpById(id int) (Chirp, error) {
 	}
 
 	return chirp, nil
-}
-
-func (db *DB) createUser(email string, password string) (User, error) {
-	file, err := db.readFile()
-	if err != nil {
-		return User{}, errors.New("Could not unmarshal file")
-	}
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	id := len(file.Users) + 1
-	user := User{
-		ID:       id,
-		Email:    email,
-		Password: password,
-	}
-	file.Users[id] = user
-
-	data, err := json.Marshal(file)
-	if err != nil {
-		return User{}, errors.New("Failed to marshal user object")
-	}
-
-	os.WriteFile(db.path, data, 0666)
-	return user, nil
-}
-
-func createDB(path string) (*DB, error) {
-	_, err := os.Create(path)
-	if err != nil {
-		return nil, err
-	}
-
-	db := &DB{path: path, mu: &sync.RWMutex{}}
-	return db, nil
 }

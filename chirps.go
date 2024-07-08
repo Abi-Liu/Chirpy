@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/abi-liu/chirpy/internal/database"
 )
 
 func (c *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
@@ -40,11 +42,11 @@ func (c *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.UID++
-	chirp := Chirp{
+	chirp := database.Chirp{
 		ID:   c.UID,
 		Body: strings.Join(chirpSlice, " "),
 	}
-	err = c.db.addChirp(chirp)
+	err = c.db.AddChirp(chirp)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -57,13 +59,13 @@ func (c *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
-	file, err := c.db.readFile()
+	file, err := c.db.ReadFile()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	chirps := []Chirp{}
+	chirps := []database.Chirp{}
 	for _, v := range file.Chirps {
 		chirps = append(chirps, v)
 	}
@@ -79,7 +81,7 @@ func (c *apiConfig) getChirpById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chirp, err := c.db.getChirpById(id)
+	chirp, err := c.db.GetChirpById(id)
 	if err != nil {
 		log.Printf("Cannot find Chirp with id %d", id)
 		respondWithError(w, http.StatusNotFound, fmt.Sprintf("Cannot find chirp with id %d", id))

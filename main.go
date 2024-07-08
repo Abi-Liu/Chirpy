@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/abi-liu/chirpy/internal/database"
 )
 
 type apiConfig struct {
 	fileserverHits int
 	UID            int
-	db             *DB
+	db             *database.DB
 }
 
 func createUIDClosure() func() int {
@@ -24,7 +26,7 @@ func main() {
 	mux := http.NewServeMux()
 	appConfig := &apiConfig{}
 
-	db, err := createDB("database.json")
+	db, err := database.CreateDB("database.json")
 	if err != nil {
 		log.Printf("Failed to create database: %s", err.Error())
 	}
@@ -38,6 +40,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", appConfig.getChirps)
 	mux.HandleFunc("GET /api/chirps/{id}", appConfig.getChirpById)
 	mux.HandleFunc("POST /api/users", appConfig.createUser)
+	mux.HandleFunc("POST /api/login", appConfig.login)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 
