@@ -57,7 +57,7 @@ func (c *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
-	file, err := c.db.readChirps()
+	file, err := c.db.readFile()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
