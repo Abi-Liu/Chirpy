@@ -89,12 +89,27 @@ func (c *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	strId := r.URL.Query().Get("author_id")
 	chirps := []database.Chirp{}
-	for _, v := range file.Chirps {
-		chirps = append(chirps, v)
-	}
+	if strId == "" {
+		for _, v := range file.Chirps {
+			chirps = append(chirps, v)
+		}
 
+		respondWithJSON(w, http.StatusOK, chirps)
+		return
+	}
+	id, err := strconv.Atoi(strId)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Please enter a valid author id")
+	}
+	for _, v := range file.Chirps {
+		if v.AuthorId == id {
+			chirps = append(chirps, v)
+		}
+	}
 	respondWithJSON(w, http.StatusOK, chirps)
+
 }
 
 func (c *apiConfig) getChirpById(w http.ResponseWriter, r *http.Request) {
