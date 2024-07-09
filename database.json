@@ -1,1 +1,1 @@
-{"chirps":{},"Users":{"asdf@test.com":{"id":1,"email":"asdf@test.com","password":"$2a$10$3ALwhAAH/pKf1msJaozlEevAd.FodUnlR9wiEOB9Czipv72.rOv36"}},"Tokens":{"1":"10aa93ae9274fcab6099fe8c5b6fd6a5a2a28d63518d0a6bf0c11cebdfc7f126"}}
+{"chirps":{},"Users":{"asdf@test.com":{"id":1,"email":"asdf@test.com","password":"$2a$10$7/pupVcNE.Zsy6rHFaPdEeXTmS.BGJng4BAWd9GaFs6LP3/H6AMAa"}},"Tokens":{"67b71eacf059cb8c812b9032ae65bdf0c43ef55c182f32e42e84e8690486e6e6":{"token":"67b71eacf059cb8c812b9032ae65bdf0c43ef55c182f32e42e84e8690486e6e6","id":1,"expires_at":"2024-09-07T00:43:30.262355Z"}}}

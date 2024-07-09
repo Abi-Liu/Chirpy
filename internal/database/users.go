@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"time"
 )
 
 var ErrUserAlreadyExists = errors.New("User already exists")
@@ -101,7 +102,13 @@ func (db *DB) UpdateRefreshToken(id int, token string) error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
-	file.Tokens[id] = token
+	tokenStruct := Token{
+		Token:     token,
+		ID:        id,
+		ExpiresAt: time.Now().UTC().Add(60 * 24 * time.Hour),
+	}
+
+	file.Tokens[token] = tokenStruct
 
 	data, err := json.Marshal(file)
 	if err != nil {
@@ -109,6 +116,32 @@ func (db *DB) UpdateRefreshToken(id int, token string) error {
 	}
 
 	os.WriteFile(db.path, data, 0666)
+
+	return nil
+}
+
+func (db *DB) LookupToken(tokenStr string) (Token, error) {
+	file, err := db.ReadFile()
+	if err != nil {
+		return Token{}, err
+	}
+
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	token, ok := file.Tokens[tokenStr]
+
+	if !ok {
+		return Token{}, errors.New("Token not found")
+	}
+
+	return token, nil
+}
+
+func CheckTokenExpiration(token Token) error {
+	if token.ExpiresAt.Before(time.Now().UTC()) {
+		return errors.New("Token is expired")
+	}
 
 	return nil
 }

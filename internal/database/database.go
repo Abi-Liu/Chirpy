@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"sync"
+	"time"
 )
 
 type DB struct {
@@ -15,7 +16,13 @@ type DB struct {
 type File struct {
 	Chirps map[int]Chirp `json:"chirps"`
 	Users  map[string]User
-	Tokens map[int]string
+	Tokens map[string]Token
+}
+
+type Token struct {
+	Token     string    `json:"token"`
+	ID        int       `json:"id"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 type User struct {
@@ -51,7 +58,7 @@ func (db *DB) ReadFile() (File, error) {
 		file := File{
 			Chirps: map[int]Chirp{},
 			Users:  map[string]User{},
-			Tokens: map[int]string{},
+			Tokens: map[string]Token{},
 		}
 		return file, nil
 	}

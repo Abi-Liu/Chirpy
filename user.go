@@ -186,6 +186,40 @@ func (c *apiConfig) updateUserCredentials(w http.ResponseWriter, r *http.Request
 	})
 }
 
+func (c apiConfig) refreshToken(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	arr := strings.Split(authHeader, "Bearer ")
+	if len(arr) < 2 {
+		respondWithError(w, http.StatusUnauthorized, "Token not provided")
+		return
+	}
+	tokenStr := arr[1]
+
+	token, err := c.db.LookupToken(tokenStr)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Token does not exist")
+		return
+	}
+
+	err = database.CheckTokenExpiration(token)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Token expired")
+		return
+	}
+
+	jwt, err := auth.GenerateToken(c.jwt, token.ID, 60*60)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to generate access token")
+		return
+	}
+
+	type Res struct {
+		Token string `json:"token"`
+	}
+
+	respondWithJSON(w, http.StatusOK, Res{Token: jwt})
+}
+
 func validateRequestCredentials(w http.ResponseWriter, email, password string) bool {
 	if email == "" || password == "" {
 		respondWithError(w, http.StatusBadRequest, "Please provide valid credentials")

@@ -61,6 +61,5 @@ func GenerateRefreshToken() (string, error) {
 	}
 
 	token := hex.EncodeToString(bytes)
-	log.Print(token)
 	return token, nil
 }
