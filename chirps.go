@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -90,23 +91,27 @@ func (c *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	strId := r.URL.Query().Get("author_id")
+	sortBy := r.URL.Query().Get("sort")
 	chirps := []database.Chirp{}
 	if strId == "" {
 		for _, v := range file.Chirps {
 			chirps = append(chirps, v)
 		}
-
-		respondWithJSON(w, http.StatusOK, chirps)
-		return
-	}
-	id, err := strconv.Atoi(strId)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Please enter a valid author id")
-	}
-	for _, v := range file.Chirps {
-		if v.AuthorId == id {
-			chirps = append(chirps, v)
+	} else {
+		id, err := strconv.Atoi(strId)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Please enter a valid author id")
 		}
+		for _, v := range file.Chirps {
+			if v.AuthorId == id {
+				chirps = append(chirps, v)
+			}
+		}
+	}
+	if sortBy == "desc" {
+		sort.Slice(chirps, func(a, b int) bool {
+			return chirps[a].ID > chirps[b].ID
+		})
 	}
 	respondWithJSON(w, http.StatusOK, chirps)
 
