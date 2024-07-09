@@ -186,7 +186,7 @@ func (c *apiConfig) updateUserCredentials(w http.ResponseWriter, r *http.Request
 	})
 }
 
-func (c apiConfig) refreshToken(w http.ResponseWriter, r *http.Request) {
+func (c *apiConfig) refreshToken(w http.ResponseWriter, r *http.Request) {
 	authHeader := r.Header.Get("Authorization")
 	arr := strings.Split(authHeader, "Bearer ")
 	if len(arr) < 2 {
@@ -218,6 +218,20 @@ func (c apiConfig) refreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, Res{Token: jwt})
+}
+
+func (c *apiConfig) revokeToken(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	arr := strings.Split(authHeader, "Bearer ")
+	if len(arr) < 2 {
+		respondWithError(w, http.StatusUnauthorized, "Token not provided")
+		return
+	}
+	tokenStr := arr[1]
+
+	c.db.DeleteToken(tokenStr)
+
+	respondWithJSON(w, http.StatusNoContent, "")
 }
 
 func validateRequestCredentials(w http.ResponseWriter, email, password string) bool {

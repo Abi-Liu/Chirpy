@@ -145,3 +145,23 @@ func CheckTokenExpiration(token Token) error {
 
 	return nil
 }
+
+func (db *DB) DeleteToken(tokenStr string) error {
+	file, err := db.ReadFile()
+	if err != nil {
+		return err
+	}
+
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	delete(file.Tokens, tokenStr)
+
+	data, err := json.Marshal(file)
+	if err != nil {
+		return err
+	}
+
+	os.WriteFile(db.path, data, 0666)
+	return nil
+}
