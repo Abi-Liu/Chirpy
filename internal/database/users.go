@@ -165,3 +165,50 @@ func (db *DB) DeleteToken(tokenStr string) error {
 	os.WriteFile(db.path, data, 0666)
 	return nil
 }
+
+func (db *DB) FindUserById(id int) (User, error) {
+	file, err := db.ReadFile()
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, v := range file.Users {
+		if v.ID == id {
+			return v, nil
+		}
+	}
+
+	return User{}, errors.New("User does not exist")
+}
+
+func (db *DB) UpgradeUser(email string) error {
+	file, err := db.ReadFile()
+	if err != nil {
+		return err
+	}
+
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	user, ok := file.Users[email]
+	if !ok {
+		return errors.New("User does not exist")
+	}
+
+	updated := User{
+		Email:       user.Email,
+		Password:    user.Password,
+		ID:          user.ID,
+		IsChirpyRed: true,
+	}
+	file.Users[email] = updated
+
+	data, err := json.Marshal(file)
+	if err != nil {
+		return err
+	}
+
+	os.WriteFile(db.path, data, 0666)
+	return nil
+
+}

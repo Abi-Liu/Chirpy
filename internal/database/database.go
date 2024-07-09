@@ -26,14 +26,16 @@ type Token struct {
 }
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
+	ID       int    `json:"id"`
+	Body     string `json:"body"`
+	AuthorId int    `json:"author_id"`
 }
 
 func CreateDB(path string) (*DB, error) {
@@ -100,4 +102,28 @@ func (db *DB) GetChirpById(id int) (Chirp, error) {
 	}
 
 	return chirp, nil
+}
+
+func (db *DB) DeleteChirpById(id int) error {
+	file, err := db.ReadFile()
+	if err != nil {
+		return err
+	}
+
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	delete(file.Chirps, id)
+
+	data, err := json.Marshal(file)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(db.path, data, 0666)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

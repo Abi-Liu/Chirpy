@@ -15,6 +15,7 @@ type apiConfig struct {
 	UID            int
 	db             *database.DB
 	jwt            string
+	polka          string
 }
 
 func createUIDClosure() func() int {
@@ -31,9 +32,11 @@ func main() {
 		log.Fatal("Failed to load env")
 	}
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaSecret := os.Getenv("POLKA_SECRET")
 	mux := http.NewServeMux()
 	appConfig := &apiConfig{}
 	appConfig.jwt = jwtSecret
+	appConfig.polka = polkaSecret
 
 	db, err := database.CreateDB("database.json")
 	if err != nil {
@@ -48,11 +51,13 @@ func main() {
 	mux.HandleFunc("POST /api/chirps", appConfig.postChirp)
 	mux.HandleFunc("GET /api/chirps", appConfig.getChirps)
 	mux.HandleFunc("GET /api/chirps/{id}", appConfig.getChirpById)
+	mux.HandleFunc("DELETE /api/chirps/{id}", appConfig.deleteChirpById)
 	mux.HandleFunc("POST /api/users", appConfig.createUser)
 	mux.HandleFunc("POST /api/login", appConfig.login)
 	mux.HandleFunc("PUT /api/users", appConfig.updateUserCredentials)
 	mux.HandleFunc("POST /api/refresh", appConfig.refreshToken)
 	mux.HandleFunc("POST /api/revoke", appConfig.revokeToken)
+	mux.HandleFunc("POST /api/polka/webhooks", appConfig.receiveWebhook)
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 

@@ -12,12 +12,9 @@ import (
 
 func GenerateToken(secret string, id, expiresAt int) (string, error) {
 	hourInSeconds := 60 * 60
-	log.Print("expires start: ", expiresAt)
 	if expiresAt == 0 || expiresAt > hourInSeconds {
 		expiresAt = hourInSeconds
 	}
-
-	log.Print("expires final: ", expiresAt)
 
 	claims := &jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(expiresAt) * time.Second)),
